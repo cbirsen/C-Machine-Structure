@@ -1,0 +1,95 @@
+/**********************************************************
+* Solve Sudoku & Unblack Edges
+* Fall 2023
+* README
+* Author: Doga Kilinc (dkilin01) & Cansu Birsen (cbirse01)
+*********************************************************/
+
+(a) Title of the homework and the author
+Solve Sudoku & Unblack Edges, (dkilin01) & Cansu Birsen (cbirse01)
+---------------------------------------------------------------------------
+
+(b) The purpose of the program
+
+The purpose of the sudoku program is to accept a sudoku solution represented 
+as a pgm file. It checks if the file provided abides by the format rules and 
+then checkes to see if the solution fulfilles sudoku rules.2D
+
+The purpose of the unblackedges program is to accept a pbm file and clean the 
+file such that there are no black edges.
+
+---------------------------------------------------------------------------
+
+(c) Acknowledgment for help
+C interfaces and Implementations by David R. Hanson
+---------------------------------------------------------------------------
+
+(d) What has been correctly implemented and what has not
+All part of the program has been correctly implemented.
+---------------------------------------------------------------------------
+
+(e) Files provided and their descriptions
+unblackedeges.c     : Given a pbm file, this program cleans the bits that 
+                      create black edges by making them white. The bits are 
+                      stored in a Bit2_T 2D bit vector, and black edge bits 
+                      are defined as pixels with value 1 and located at the 
+                      edges, or pixels with value 1 and a neighbour that is a 
+                      black edge pixel.
+
+sudoku.c            : Given a pgm file that represents a solved sudoku problem 
+                      with 9 by 9 dimension and 9 as the max value, this 
+                      program checks if the given solution is valid. The 
+                      program checks to see if each value in the same row, 
+                      same column, or same 3-by-3 subsudoku are unique, and 
+                      exits with success if the solution is valid.
+
+uarray2.h           : This file can be used to create a 2D array where a 
+                      client can store the data. It also has functions that
+                      helps the client to get the width, height, and element 
+                      size information about the array, traverse the array in 
+                      row major and column major order and access to an element 
+                      at a certain location.
+
+uarray2.c           :  This file can be used to create a 2D Uarray where a 
+                       client can store data in a 2D array. It also has 
+                       functions that helps the client to get the width, 
+                       height, and element size information about the array, 
+                       traverse the array in row major and column major order,
+                       access to an element at a certain location, and free 
+                       the UArray.
+
+bit2.h              : This file can be used to create a 2D vector where a 
+                      client can store the bit data in. It also has functions 
+                      that helps theclient to get the width, height, and 
+                      element size information about the vector, traverse the 
+                      vector in row major and column major order, and access to
+                      an element at a certain location.
+
+bit2.c:             : This file can be used to create a 2D bit vector where a 
+                      client can store data in a 2D bit vector. It also has 
+                      functions that helps the client to get the width, height,
+                      and element size information about the vector, traverse 
+                      the vector in row major and column major order, access to
+                      an element at a certain location, and free the bit 
+                      vector.
+
+pbmReadWrite.h       : This program checks if a given file is in the correct 
+                       pbm format. If it is, the program creates a 2D vector 
+                       to store the data. The program can also be used to 
+                       print out the cleared data in the 2D vector to an 
+                       output file.
+
+pbmReadWrite.c       : This program checks if a given file is in the correct 
+                       pbm format. If it is, the program creates a 2D Bit2_T 
+                       object to store the data. The program can also be used
+                       to print out the cleared data in the 2D Bit2_T object 
+                       to an output file.
+
+openOrDie.h          : This file is the .h file for openOrDie.c program. It
+holds the openOrDie function declaration.
+
+openOrDie.c          : This file contains the function that enables the user
+to check if the program is started with the 1 or 2 arguments. It also enables
+user to open a file stream from the given arguments or from stdin according
+to the number of argument supplied. If the file stream is not opened 
+correctly, gives a checked runtime error.
