@@ -1,0 +1,71 @@
+/**********************************************************
+* PPM Operations
+* Fall 2023
+* README
+* Author: Doga Kilinc (dkilin01) & Cansu Birsen (cbirse01)
+*********************************************************/
+
+(a) Title of the homework and the author
+PPM Operations, Doga Kilinc (dkilin01) & Cansu Birsen (cbirse01)
+---------------------------------------------------------------------------
+
+(b) The purpose of the program 
+
+The purpose of the program is to read a ppm image, either given as a file or 
+from the standard input, and apply the chosen operation (rotations, flips, or 
+transpose) to the image. If no operation is chose, the program applies 0
+degree rotation by default. After the operation is completed, the resulting
+image is printed out to the standard output. If the user request time
+infromation and proves the output file for that, the program calculates the
+time it took for it to do the operation and prints out a detailed time 
+infromation to the given output file.
+---------------------------------------------------------------------------
+
+(c) Acknowledgment for help
+C interfaces and Implementations by David R. Hanson
+---------------------------------------------------------------------------
+
+(d) What has been correctly implemented and what has not
+All part of the program has been correctly implemented, including the extra
+credit parts.
+---------------------------------------------------------------------------
+
+(e) Architecture of the program
+uarray2b.c: 
+This file can be used to create a 2D UArray2b, which is a 2D array 
+representation such that there is a main UArray2T, and each cell of UArray2T
+is filled with UArrayTs. Each UArrayT represent a block, where each cell in
+the block stores the data from the given input.
+
+a2plain.c & a2blocked.c:
+In this program, there are 2 types of main data structures that can be
+used to store the input data: UArray2b, which is the block 2D array 
+representation, and UArray2, which is the linear 2D array represention.
+Both type of 2D arrays needs to perform the same tasks, therefore, for the 
+sake of abstraction and modularity, the program uses a method suite called
+A2Methods_UArray2. In the files a2plain.c and a2blocked.c, the operations for
+both type of arrays are implemented for the A2Methods_UArray2 method suite.
+
+ppmtrans.c:
+This file handles the command line arguments given by the user and calls the 
+operationHandler function from operations.h with the correct parameters 
+considering the user input. The file accepts command line inputs to copy pixels
+from a given ppm image in the format stated by the user (or the default method)
+and performs a 0, 90, 180, 270 degree rotation, horizontal/vertical flip, or
+transpose depending on what the user asks for (or defaults to 0 degree) 
+rotation. The operationHandler function prints the resulting image to the 
+standard output in binary ppm format. If the user desires, they can also time 
+the rotation operation with "-time" command followed by the name of the file
+to output the timing information.
+
+operations.c:
+This file is used to copy pixels from the input image using the given mapping
+method from the A2Methods_T suite to a Pnm_ppm from pnm.h interface. Then, it 
+implements the desired rotation by initializing a new A2Methods_UArray2, and 
+moving pixel information from the original A2Methods_UArray2 held by Pnm_ppm to
+the new A2Methods_UArray2 using the functions from A2Methods_T suite. 
+Meanwhile, the program also initializes a CPUTime_T instance using cputiming.h 
+file, and if the user asks for timing information, records the output from 
+the CPUTime_T to the provided output file. After the rotation, the program 
+prints the resulting image in binary output to standard output.
+--------------------------------------------------------------------------- 
