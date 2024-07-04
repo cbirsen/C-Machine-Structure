@@ -1,0 +1,174 @@
+/**********************************************************
+* filesofpix
+* Fall 2023
+* README
+* Author: Doga Kilinc (dkilin01) & Cansu Birsen (cbirse01)
+*********************************************************/
+
+(a) Title of the project and the author
+filesofpix, (dkilin01) & Cansu Birsen (cbirse01)
+---------------------------------------------------------------------------
+
+(b) The purpose of the program
+
+The purpose of this program is to output a raw image file in P5 file given a 
+plain P2 file whose original lines are duplicated and corrupted by unique 
+infusion patterns or corrupted by a non-unique infusion pattern. 
+
+---------------------------------------------------------------------------
+
+(c) Acknowledgment for help
+C interfaces and Implementations by David R. Hanson
+---------------------------------------------------------------------------
+
+(d) Files provided and their descriptions
+readaline.c         : This file contains the function that enables the user to
+read a single line from a file. The function stores the contents of the line to
+given char array and returns the number of bytes. If the user repeatedly calls
+this function, it continues to read the file from the last unseen character.
+
+restoration.c       : This program is used to restore plain P2 pgm files 
+corrupted with an infusion pattern and repeated lines. It achieves this by 
+separating the non-int character into an Atom and the int characters into a 
+sequence structure given a single line by readaline.c. It places the 
+Atom-sequence pair into a Hanson table as key-value pairs. Once an already
+existing key is inserted to the table, the infusion pattern is found. After 
+that point, the program frees the table and stores the int values from the 
+original lines to a new sequence of sequences structure. Lastly, the program 
+recovers the image as a raw P5 and outputs the result to the standard output.
+
+openOrDie.h          : This file is the .h file for openOrDie.c program. It
+holds the openOrDie function declaration.
+
+openOrDie.c          : This file contains the function that enables the user
+to check if the program is started with the 1 or 2 arguments. It also enables
+user to open a file stream from the given arguments or from stdin according
+to the number of argument supplied. If the file stream is not opened 
+correctly, gives a checked runtime error.
+
+--------------------------------------------------------------------------- 
+
+(e) Compiling and running the program
+To compile the program, type make all to the terminal. To run, write 
+"./restoration [filename]" or only "./restoration" and the program will 
+expect input from standard input.
+---------------------------------------------------------------------------
+
+(f) Architectural Overview
+
+readaline.c: 
+This program uses a pointer to a pointer to a char array which is used to store
+the characters from the same line in the provided file. 
+
+restoration.c: 
+This program uses pointer to a char array, *datapp, to get the lines of the
+file with the help of readaline.c. Then, the program separates the non-int
+values (pattern) and the int values in the line. To store the ints, it
+uses a Hanson sequence and to store non-ints, it uses an Atom variable.
+
+The program also uses an Hanson table to store the key (non-int values as a 
+Atom) and the value (int values as a sequence) pairs. When the same key is
+inserted into the table twice, it understands that it found the true pattern.
+At this point, it stops using tha Hanson table. To store the int values, the
+program uses a sequence of sequences, where each smaller sequence represents
+digits from the same original line which will later be converted to a 1-byte 
+values. 
+---------------------------------------------------------------------------
+
+(g) Outline of the data structures and algorithms
+
+Data Structures:
+- Hanson Sequences: We chose Hanson sequences as they let us add/remove 
+elements to/from the beginning/end (we specifically used Seq_addhi and 
+Seq_remlo), which was useful for inserting new values as we obtained 
+information from the lines. Similarly, this structure allows us to access 
+elements using their indices and holds the elements in the order we input it, 
+which was important for us in terms of protecting the original order of integer
+values and lines when we wanted to transform them to P5 format.
+- Atom and Char Arrays: Atom structure expects pointers, so to build the Atom
+structures for the strings in our program, we first inputted the char values to
+char arrays and then passed the pointers to Atom structures. Atom structures 
+were especially useful for comparing different strings (as they assign the 
+same pointer if the strings are identical), which made it possible to find 
+non-unique infusion patterns.
+-Hanson Table: We used Hanson table to store the pattern (as Atom structure) 
+and integer values (as sequence structure) from the same lines as key-value 
+pairs. This data structure made it possible keep track of which patterns 
+infused which lines, and by checking if the pattern already existed in the 
+table before an insertion, we were able to pinpoint the non-unique pattern,
+which is the true infusion pattern.
+
+Algorithms:
+- Line Separating Algorithm
+In lineSeparater function in restoration.c, the main aim is to group non-int
+values and int values in separate structures so that we can separate the
+corruption pattern from the actual int values. For the program to be more 
+memory efficient, the function groups the consecutive integers and then puts
+each consecutive integers to a sequence. To do that, the function uses a while
+loop and reads the consecutive integers. As it reads them, it uses the 
+formula: num = num * 10 + (datapp[i++] - '0') to make them one integer. 
+Also, in this while loop, the bool value 'a' is set to true, meaning that an
+integer group (length >=1) has been encountered while reading from the line.
+When the function exists the while loop, if 'a' is true, the function mallocs
+the final integer value and puts it in the integer sequence. If 'a' is false,
+meaning that the value that is read and needs to be separated is a non-digit
+value, the function adds it to the *charArray, where it stores the pattern.
+
+- Finding Non-Unique Pattern Algorithm 
+The program finds the pattern when a key that already exists in the table is 
+tried to be inserted. To achieve this goal, the fileReader function uses a bool
+variable "discovered", which is initially false. As the function obtains the 
+non-int sequence and the int sequence from each line, it checks the status of
+"discovered". If it is false, the function calls tableHandler function, which
+checks if there is an already existing key with the same value as the given 
+key. If there is not, the tableHandler returns false and inserts the key-value 
+pair to the table. If there is, it returns true, and fileReader function stores
+the current key to the *truePattern. If the status of "discovered" is initially
+true when the fileReader is called, fileReader do not call tableHandler and 
+just checks if the current key is equal to the *truePattern. If it is, it means
+that the int sequence is a part of the original lines in the uncorrupted 
+version of the file. So, the program stores that sequenceto finalSeq. 
+If the key does not match, the program moves onto the next line in the file.
+
+---------------------------------------------------------------------------
+
+(h) Testing the various parts of this program
+
+- First, we tested the logistics of running the program with correct number of 
+arguments and opening files correctly. 
+- After writing the readaline function, we created a simple .txt file that has
+simple corrupted lines in it. We used readaline to first read and print the 
+contents of the first line, and then continued by calling readaline to see if 
+it returned the contents starting from the last unseen character. 
+- Once we saw readaline worked correctly, we tested if our code correctly 
+separated integers and non-integer characters from a single line by printing 
+out the Atom and sequence structures we created in the lineSeparater function.
+- After we built a table, we tried to insert the Atom and sequence pairs we 
+generated, where each Atom was unique. 
+- We, then, created other simple .txt files with the same corruption pattern 
+repeating to see if our code could handle non-unique Atom keys correctly (i.e. 
+freeing the table and moving the sequences holding the original lines to 
+finalSeq). Our test files included lines such as:
+        a48a49bb50ccc51z
+        a3h4f5t5z
+        a1a2b3g4z
+        a100a200k300f400z
+        a53a54bb55ccc56z
+        a90a91bb92ccc93z
+- Moreover, some of our txt test files included patterns that has non-letter 
+characters such as &, *, -, etc.
+- After moving original lines to finalSeq correctly (which we tested by 
+printing out the contents of that sequence), we tested our P2 to P5 conversion
+function by printing out the results from our simple test files and checking 
+the conversions with an ASCII table.
+- Furthermore, we tested the corrupted files provided with the assignment by 
+rerouting the results to output files and trying open the images on our own
+computers.
+- We also repeatedly ran valgrind along with our other tests. Although we tried
+to free everything, we still have valgrind errors.
+- Lastly, we checked if the runtime is under 20 seconds by redicrecting the 
+output to /dev/null and keeping track of time.
+
+---------------------------------------------------------------------------
+(i) How many hours we have spent: 24 hours
+---------------------------------------------------------------------------
