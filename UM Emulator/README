@@ -1,0 +1,56 @@
+README for UM Emulator
+
+1. Cansu Birsen (cbirse01) and Ayse Idil Kolabas (akolab01).
+
+2. This program emulates the functions of a universal machine.
+
+3. Modules
+   -------
+
+   emulator.c           : this is the file with the main to run the UM. opens
+                          the um file with instructions and calls operations
+                          to execute the input file. only knows to open and
+                          close the um file.
+
+   a. operations        : the operations module initiates the program and reads
+                          the instructions from the given um file. it then 
+                          calls on the instructions as implicated by the 
+                          opcode in the uint32_t word that represents each
+                          instruction. this module makes use of both the 
+                          register and memory_management module that will
+                          be explained below.
+
+                          the module has functions related to initiating
+                          the program, unpacking each instruction in
+                          addition to calling the appropriate operations with
+                          the appropriate values as parameters.
+
+   b. memory_management : this module is a sequence of uarrays of uint32_t
+                          words. each uarray represents a segment, while
+                          each uint32_t word represents an instruction. the
+                          entire sequence represents the memory structure for
+                          the universal machine. 
+                          
+                          this module also has a segment id manager that is
+                          a sequence of uint32_t words. each word represents
+                          the id for the segment that is free to be mapped to.
+
+                          the module has functions related to accessing
+                          specific segments within memory or specific words
+                          within segments, in addition to putting segments to
+                          specific indices within memory. the module can also
+                          add segments at the end of memory and get the lengths
+                          associated with memory and segments. in terms of id
+                          management for the map and unmap operations, this
+                          module also creates the id managing sequence and 
+                          frees it in addition to adding to and removing from
+                          the structure.
+
+   c. register          : this module is a uarray of uint32_t words. each word
+                          represents a register and stores the value that the
+                          register is meant to store. the length is fixed as 
+                          we are emulating a machine with 8 32-bit registers.
+
+                          the module has functions related to assigning values
+                          to specific registers in addition to creating new
+                          registers and freeing registers.
