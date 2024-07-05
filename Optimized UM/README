@@ -1,0 +1,60 @@
+Optimized UM by Cansu Birsen (cbirse01) and Ayse Idil Kolabas (akolab01)
+
+   * The routine that takes up most time in our optimized UM is the call to the
+     Seq_get function from Hanson's data structures. In our Callee Map, Seq_get
+     calls constituted roughly 20% of our program and it gets executed 672 
+     times according to the result from valgrind --dump-instr=yes.
+   
+   * The assembly code could be improved as follows:
+     We realized in the beginning of Seq_get, especially when ensuring bounds 
+     of the index within 0 and the length of the sequence, some values 
+     regarding the sequence are reused, and refetched from the memory multiple
+     times. We believe that this number could be reduced in order to increase
+     efficiency by storing the pointer to the sequence as well as the length of
+     the sequence in a register. You can find the specific lines we reported on
+     below the last question with the !!! symbol.
+
+   * Our benchmarks can be made with make all and then run with
+        ./um midmark.um
+        ./um sandmark.umz
+        ./um advent.umz < advent_input.txt
+
+   * We have spent: 2 hours analyzing the problem & 9 hours solving the problem
+
+Appendix: Assembly code for Seq_get()
+
+0000000000401f80 <Seq_get>:
+  401f80:	48 89 5c 24 f0       	mov    %rbx,-0x10(%rsp)
+  401f85:	48 89 6c 24 f8       	mov    %rbp,-0x8(%rsp)
+  401f8a:	48 83 ec 18          	sub    $0x18,%rsp
+  401f8e:	48 85 ff             	test   %rdi,%rdi 
+  401f91:	48 89 fb             	mov    %rdi,%rbx 
+  401f94:	89 f5                	mov    %esi,%ebp 
+  401f96:	74 48                	je     401fe0 <Seq_get+0x60> 
+  401f98:	85 ed                	test   %ebp,%ebp 
+  401f9a:	78 05                	js     401fa1 <Seq_get+0x21> 
+  401f9c:	3b 6b 10             	cmp    0x10(%rbx),%ebp              !!!
+  401f9f:	7c 18                	jl     401fb9 <Seq_get+0x39> 
+  401fa1:	48 8d 3d 10 4e 20 00 	lea    0x204e10(%rip),%rdi        # 606db8 <Assert_Failed>
+  401fa8:	48 8d 35 2f 39 00 00 	lea    0x392f(%rip),%rsi        # 4058de <_IO_stdin_used+0x1f6>
+  401faf:	ba 38 00 00 00       	mov    $0x38,%edx
+  401fb4:	e8 37 fa ff ff       	callq  4019f0 <Except_raise>
+  401fb9:	8b 43 14             	mov    0x14(%rbx),%eax              !!!
+  401fbc:	01 e8                	add    %ebp,%eax 
+  401fbe:	48 8b 6c 24 10       	mov    0x10(%rsp),%rbp              !!!
+  401fc3:	89 c2                	mov    %eax,%edx
+  401fc5:	c1 fa 1f             	sar    $0x1f,%edx
+  401fc8:	f7 3b                	idivl  (%rbx)
+  401fca:	48 8b 43 08          	mov    0x8(%rbx),%rax               !!!
+  401fce:	48 8b 5c 24 08       	mov    0x8(%rsp),%rbx               !!!
+  401fd3:	48 63 d2             	movslq %edx,%rdx
+  401fd6:	48 8b 04 d0          	mov    (%rax,%rdx,8),%rax           !!!
+  401fda:	48 83 c4 18          	add    $0x18,%rsp
+  401fde:	c3                   	retq   
+  401fdf:	90                   	nop
+  401fe0:	48 8d 3d d1 4d 20 00 	lea    0x204dd1(%rip),%rdi        # 606db8 <Assert_Failed>
+  401fe7:	48 8d 35 f0 38 00 00 	lea    0x38f0(%rip),%rsi        # 4058de <_IO_stdin_used+0x1f6>
+  401fee:	ba 37 00 00 00       	mov    $0x37,%edx
+  401ff3:	e8 f8 f9 ff ff       	callq  4019f0 <Except_raise>
+  401ff8:	eb 9e                	jmp    401f98 <Seq_get+0x18>
+  401ffa:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
