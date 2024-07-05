@@ -1,0 +1,45 @@
+ /* Fit tests */
+        // printf("EXPECTED true: %d\n", Bitpack_fitsu(5, 8));
+        // printf("EXPECTED false: %d\n", Bitpack_fitsu(8, 3));
+        // printf("EXPECTED true: %d\n", Bitpack_fitss(-2, 3));
+        // printf("EXPECTED false: %d\n", Bitpack_fitss(5, 3));
+        // printf("EXPECTED true: %d\n", Bitpack_fitsu(0xFFFFFFFFFFFFFFFF, 64));
+        // printf("EXPECTED true: %d\n", Bitpack_fitss(0x7FFFFFFFFFFFFFFF, 64));
+
+        /* Get tests */
+        // printf("EXPECTED 61: %lu\n", Bitpack_getu(0x3f4, 6, 2));
+        // printf("EXPECTED 1: %ld\n", Bitpack_getu(0x3f4, 2, 2));
+        // printf("EXPECTED -3: %ld\n", Bitpack_gets(0x3f4, 6, 2));
+        // printf("EXPECTED 0: %lu\n", Bitpack_getu(0x3f4, 0, 2));
+        // printf("EXPECTED 0: %ld\n", Bitpack_gets(0x3f4, 0, 2));
+        //printf("EXPECTED 0: %ld\n", Bitpack_gets(0x3f4, 0, 2));
+        // printf("EXPECTED 1012: %lu\n", Bitpack_getu(0x3f4, 64, 0));
+        // printf("EXPECTED 9,223,372,036,854,775,807: %ld\n", Bitpack_gets(0x7FFFFFFFFFFFFFFF, 64, 0));
+
+
+        /* Set Tests */
+        // uint64_t val = 7;
+        // uint64_t word = 0x3f4;
+        // unsigned lsb = 1;
+        // unsigned width = 3; 
+        // printf("EXPECTED 7: %lu\n", Bitpack_getu(Bitpack_newu(word, width, lsb, val), width, lsb));
+        
+        // uint64_t val = 0xFFFFFFFFFFFFFFFF;
+        // uint64_t word = (uint64_t)0;
+        // unsigned lsb = 0;
+        // unsigned width = 64; 
+        // printf("EXPECTED 18,446,744,073,709,551,615: %lu\n", Bitpack_getu(Bitpack_newu(word, width, lsb, val), width, lsb));
+
+        // int64_t vals = 0x7FFFFFFFFFFFFFFF;
+        // printf("EXPECTED  9,223,372,036,854,775,807: %ld\n", Bitpack_getu(Bitpack_newu(word, width, lsb, vals), width, lsb));
+
+        // int64_t vals = -7;
+        // width = 4; 
+        // printf("EXPECTED -7: %ld\n", Bitpack_gets(Bitpack_news(word, width, lsb, vals), width, lsb));
+        //printf("ERROR: %lu\n", Bitpack_getu(Bitpack_newu(word, 2, lsb, val), 2, lsb));
+
+        // uint64_t val = 7;
+        // uint64_t word = 0x3f4;
+        // unsigned lsb = 1;
+        // unsigned width = 3; 
+        // printf("EXPECTED 7: %lu\n", Bitpack_getu(Bitpack_newu(word, width, lsb, val), width, lsb));

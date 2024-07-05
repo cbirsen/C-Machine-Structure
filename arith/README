@@ -1,0 +1,96 @@
+/**********************************************************
+* PPM Compression
+* Fall 2023
+* README
+* Author: Cansu Birsen (cbirse01) & Ethan Goldman (gethan01)
+*********************************************************/
+
+(a) Title of the homework and the author
+PPM Compression, Cansu Birsen (cbirse01) & Ethan Goldman (gethan01)
+---------------------------------------------------------------------------
+
+(b) The purpose of the program
+40image provides compression and decompression functions for images in PPM
+format. 
+
+The compression function prints compressed images to stdout.
+Compressed images are approximately 3 times smaller than the original PPM
+image. Files for compression can either be called as a argument on the
+terminal or input can be read from stdin. 
+
+The decompression function restores the compressed images to PPM format
+with minimal data loss (approximately 4-5%). The decompression function can
+read from stdin or a file name can be provided as an argument on the 
+command line.
+
+---------------------------------------------------------------------------
+
+(c) Acknowledgment for help
+C interfaces and Implementations by David R. Hanson
+---------------------------------------------------------------------------
+
+(d) Architecture: Files provided and their descriptions
+compress_structs.h             : This file holds three structs created for this
+program. They all hold a different form of image pixel representation: RGB 
+values as unscaled floats, component video values, and quantized values.
+
+40image.c                      : This file accepts command line arguments and 
+depending on the arguments provided, calls the compress or decompress functions
+in compress40.c with a file pointer (if a file name is provided and opened) or
+expects input from standard input.
+
+compress40.c                   : This file has a compress and a decompress 
+function, and both functions call the correct functions in read_and_write, 
+rgb_conversion, rgb_yPbPr_conversion, merge_blocks, and final_bitpack in the 
+correct order to compress a ppm image to a file approximately 3 time smaller
+than the original or to decompress compressed files.
+
+read_and_write.c (and .h)      : This file is used to either read in a ppm file
+and store image information in a Pnm_ppm struct or take in a Pnm_ppm struct and
+print image content in binary form to stdout.
+
+rgb_conversion.c (and .h)      : This file is can take in a Pnm_ppm struct 
+holding a UArray2 with RGB scaled integers and updates those values to be 
+unscaled floats and updates the Pnm_ppm struct. This file can also accept a 
+Pnm_ppm struct holding a UArray2 with RGB unscaled floats and updates those 
+values to be scaled integer values in the range 0-RGB_MAX (defined as 255 for
+this program) and updates the Pnm_ppm struct.
+
+rgb_yPbPr_conversion.c (and .h): This file provides functions to compress and
+decomprss between rgb unscaled floats and component video floats. The rgb
+floats are passed to/from rgb_conversion.c and the component video floats are
+passed to/from merge_blocks.c.
+
+merge_blocks.c (and .h)        : This file provides functions to compress
+and decompress between 2x2 blocks of component video (Y, Pb, Pr) pixels and
+1x1 blocks of quantized values (a, b, c, d, index Pb, index Pr). The
+quantized values are passed to/from final_bitpack.c and the component video
+values are passed to/from rgb_yPbPr_conversion.c.
+
+final_bitpack.c (and .h)       : This file contains functions to compress and
+decompress between quantized values and bitpacked codewords. Bitpacking is
+performed using the functions contained in bitpack.c. The quantized values
+that the functions compress and decompress are taken/returned to/from
+merge_blocks.c. 
+
+bitpack.c                      : This file contains functions that allow for
+testing whether or not a signed or unsigned value will fit in a number of bits,
+geting subwords from bitpacked codewords, and updating subwords in bitpacked
+codewords. These functions are used by final bitpack to encode and decode
+quantized values into bitpacked codewords.
+
+ppmdiff.c                      : Diff file for ppm images. Follows spec from
+lab 6.
+--------------------------------------------------------------------------- 
+
+(e) What has been correctly implemented and what has not: 
+
+Our code correctly compresses and decompresses file provided. The only issue we
+have observed is when we use ppmdiff to calculate the difference rate between 
+the original and compressed/decompressed image, the error rate we are getting 
+is around 0.04 while we were expecting 0.026 per the ppmdiff spec recommends.
+---------------------------------------------------------------------------
+
+(i) How many hours we have spent analyzing the problems: 6 hours
+    How many hours we have spent solving the problems: 24 hours
+---------------------------------------------------------------------------
