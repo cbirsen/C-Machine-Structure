@@ -1,0 +1,126 @@
+#  Assembly Lang RPN by akolab01 and cbirse01              #
+#       printd.ums: module related to printing a single    #
+#                   integer                                #
+#  December 8th, 2023                                      #
+############################################################
+
+.section init
+        # initializes the zero register as r0, sets r6 and r7 as temps
+        .zero r0
+        .temps r6, r7
+
+.section text
+############################################################
+#                          printd                          #
+############################################################
+# arguments                                                
+#              none
+# type of result:
+#              none                              
+# description: gets value last pushed to the call stack,
+#              depending on its sign and value, calls
+#              appropriate function to either directly print
+#              the value (for zero and the most negative 
+#              number) or calls for fill_loop or 
+#              handle_negatives to recursively print each 
+#              digit of the number
+# notes:       it is the callee's responsibility to push
+#              the number to be printed to r2 (call stack)
+############################################################
+printd:
+        # stores return address in call stack
+        push r1 on stack r2 
+
+        # stores non-volatile register
+        push r4 on stack r2 
+
+        # stores non-volatile register
+        push r3 on stack r2
+
+        # gets value last pushed to r2 before calling printd
+        r3 := m[r0][r2 + 3]
+
+        # stores the most negative number
+        r4 := 0x80000000
+
+        # sets r1 as printstack
+        r1 := printstack
+
+        # signals stack element to printed
+        output ">>> "
+        
+        # compares number with most negative number
+        if (r3 == r4) goto handle_big using r5
+
+        # directs to handling negative case if any other negative number
+        if (r3 <s r0) goto handle_negatives using r5
+
+        # starts recursion to print multi-digit numbers
+        if (r3 >s r0) goto fill_loop using r5
+
+        # if not any of the above options, r3 == 0, so continues to handle_zero
+
+handle_zero:
+        # prints 0 and goes to print_exit
+        output "0"
+        goto print_exit
+
+handle_big:
+        # prints the most negative number and goes to print_exit
+        output "-2147483648"
+        goto print_exit
+
+handle_negatives:
+        # prints the minus sign and continues to fill_loop
+        output "-"
+        r3 := r3 - 1
+        r3 := ~r3
+
+# seperates the value to be printed to digits and stoes each digit on 
+# printstack
+fill_loop:
+        # gets the least significant digit
+        r4 := r3 mod 10
+        
+        # removes the least significant digit
+        r3 := r3 / 10
+        
+        # pushes the least significant digit to printstack
+        push r4 on stack r1
+        
+        # if number has more digits, continues to loop
+        if (r3 != 0) goto fill_loop
+
+# uses printstack to access and print each digit starting from the most 
+# significant
+print_loop:    
+        # once all digits of the number are pushed to the print stack
+        pop r4 off stack r1
+
+        # prints most significant digit in decimal
+        output r4 + '0'
+
+        # if there are no more digits to be printed goes to print_exit
+        if (r1 == printstack) goto print_exit using r5
+
+        # otherwise, continues to loop
+        goto print_loop
+        
+print_exit:
+        # adds new line
+        output "\n"
+
+        # restore callee's r3
+        pop r3 off stack r2
+
+        # restore callee's r4
+        pop r4 off stack r2 
+
+        # restores and returns to return address
+        pop r1 off stack r2 
+        goto r1
+
+.section data
+        # allocates space for print stack
+        .space 10000
+        printstack:

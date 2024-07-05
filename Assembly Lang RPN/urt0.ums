@@ -1,0 +1,29 @@
+#  Assembly Lang RPN by akolab01 and cbirse01              #
+#       urt0.ums: module containing the main function      #
+#  December 8th, 2023                                      #
+############################################################
+
+.section init
+        # initializes the zero register as r0, sets r6 and r7 as temps
+       .zero r0
+       .temps r6, r7
+
+        # sets r2 as call stack
+        r2 := endstack
+
+.section text
+main:
+        # stores return address in call stack
+        push r1 on stack r2
+        
+        # waits for first user input, starting the RPN calculator
+        goto waiting_initial linking r1
+        
+        # restores and returns to return address
+        pop r1 off stack r2 
+        goto r1
+
+.section data
+        # allocates space for call stack
+        .space 10000
+        endstack:

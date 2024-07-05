@@ -1,0 +1,14 @@
+#  Assembly Lang RPN by akolab01 and cbirse01              #
+#       callmain.ums: module related to calling main       #
+#                     and stopping the program             #
+#  December 8th, 2023                                      #
+############################################################
+
+.section init
+        # initializes the zero register as r0, sets r6 and r7 as temps
+        .temps r6, r7
+        .zero r0
+
+        # calls main and halts once program ends
+        goto main linking r1
+        halt

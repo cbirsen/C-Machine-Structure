@@ -1,0 +1,708 @@
+#  Assembly Lang RPN by akolab01 and cbirse01              #
+#       calc40.ums: module representing RPN Calculator,    #
+#                   runs the calculator as long as input   #
+#                   is provided                            #
+#  December 8th, 2023                                      #
+############################################################
+
+.section init
+        # initializes the zero register as r0, sets r6 and r7 as temps
+        .zero r0
+        .temps r6, r7
+
+_jumptable_initialize:
+        # stores return address in call stack
+        push r1 on stack r2
+        
+        # stores non-volatile register
+        push r3 on stack r2
+
+        # initializes count
+        r3 := 0
+
+        # only 0 through 255 will be initialized to error for the jumptable
+        r1 := 256
+
+initialize_error:
+        # each character in jumptable is set to input error
+        r4 := jumptable + r3
+        m[r0][r4] := input_error
+
+        # increments count
+        r3 := r3 + 1
+
+        # if still in range 0...255, continues to loop
+        if (r3 <s r1) goto initialize_error using r5
+        
+        # prepares to loop within digits, ':' being the first char after '9'
+        r3 := '0'
+        r1 := ':'
+
+set_digit:
+        # each digit in jumptable is set to digit function
+        r4 := jumptable + r3
+        m[r0][r4] := digit
+
+        # increments count
+        r3 := r3 + 1
+
+        # if still in range 48...57, continues to loop
+        if (r3 <s r1) goto set_digit using r5
+
+jumptable_op:
+        # fills functions in jumptable for each legal operation
+        m[r0][jumptable + ' '] := waiting
+        m[r0][jumptable + '\n'] := newline
+        m[r0][jumptable + '+'] := sum
+        m[r0][jumptable + '-'] := subtract
+        m[r0][jumptable + '*'] := mult
+        m[r0][jumptable + '/'] := div
+        m[r0][jumptable + '|'] := or
+        m[r0][jumptable + '&'] := and
+        m[r0][jumptable + 'c'] := sign
+        m[r0][jumptable + '~'] := comp
+        m[r0][jumptable + 's'] := swap
+        m[r0][jumptable + 'd'] := dup        
+        m[r0][jumptable + 'p'] := popping
+        m[r0][jumptable + 'z'] := remove
+
+        # restore callee's r3
+        pop r3 off stack r2
+
+        # restores return address
+        pop r1 off stack r2
+
+        # sets value stack to r4
+        r4 := valuestack
+
+.section text
+
+############################################################
+#                      waiting_initial                     #
+############################################################
+# arguments                                                
+#              r1:  holds the return address
+# type of result:                                          
+#              none                                     
+# description: stores the values in registers r1, r3, and  
+#              r4 in call stack to later restore them, and 
+#              expects one character inputs until EOF is   
+#              the input, and calls the proper function to 
+#              execute the user input                      
+############################################################
+waiting_initial:
+        # stores return address in call stack
+        push r1 on stack r2
+
+        # stores non-volatile register
+        push r3 on stack r2
+
+        # stores non-volatile register
+        push r4 on stack r2
+
+    waiting:
+        # takes input
+        r1:= input()
+	
+        # if EOF, ends program
+        r3 := ~r1
+	if (r3 == 0) goto end
+	
+        # gets and goes to function associated with input
+	r3 := jumptable + r1 
+        r3 := m[r0][r3]
+        goto r3
+
+    end:
+        # restore callee's r4
+        pop r4 off stack r2
+
+        # restore callee's r3
+        pop r3 off stack r2
+
+        # restores and returns to return address
+        pop r1 off stack r2
+        goto r1
+
+############################################################
+#                          entering                        #
+############################################################
+# arguments                                                
+#              none             
+# type of result:                                          
+#              none   
+# description: this function is called when the last input 
+#              is a digit to check if the next input is a  
+#              consecutive digit, meaning the whole input  
+#              is a multi-digit number. Checks if the next 
+#              input is a digit and either corrects the    
+#              last value added to value stack or executes 
+#              the new input                               
+############################################################
+entering:
+        # waits for more input
+        r1:= input()
+	
+        # if EOF, ends program
+        r3 := ~r1
+	if (r3 == 0) goto end
+
+        # checks if input is a digit
+        conditional1:
+                if ('0' <=s r1) goto conditional2 using r5
+                goto conditionalelse
+        conditional2:
+                # goes to entering_digit function if input is a digit
+                if (r1 <=s '9') goto entering_digit using r5
+        
+        # if not a digit, goes to function associated with operation
+        conditionalelse:
+                r3 := jumptable + r1 
+                r3 := m[r0][r3]
+                goto r3
+
+############################################################
+#                      entering_digit                      #
+############################################################
+# arguments                                                
+#              r1: last digit input following another digit
+# type of result:                                          
+#              none                                     
+# description: creates multi-digit numbers by popping the  
+#              last element on the value stack and         
+#              multiplying it by 10 and then adding the    
+#              last digit input, then calls digit to input 
+#              the updated element into valuestack         
+############################################################
+entering_digit:
+        # effectively creates multi-digit numbers
+        pop r3 off stack r4
+        r3 := r3 * 10 
+        r1 := r3 + r1
+        goto digit
+
+############################################################
+#                          newline                         #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: recursively calls printd to print each
+#              element in the value stack         
+############################################################
+newline:
+        r3 := r4
+
+        # if value stack is empty, does not print anything 
+        # and returns to waiting state
+        if (r3 == valuestack) goto waiting using r5
+
+        # otherwise
+        print_stack_loop:
+                # pushes topmost element in call stack
+                r5 := m[r0][r3]
+                push r5 on stack r2
+                
+                # prints topmost element
+                goto printd linking r1
+                pop stack r2
+                
+                # increments to access next element in value stack
+                r3 := r3 + 1
+
+                # while r3 does not point to the end of the value stack, 
+                # continues the loop
+                if (r3 != valuestack) goto print_stack_loop using r5
+        
+        # when done printing, goes to waiting state
+        goto waiting
+
+############################################################
+#                            sum                           #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: accesses to the topmost 2 elements using 
+#              access_two_elt. sums up the elements, pushes 
+#              the result back on valuestack, and goes to 
+#              waiting state         
+############################################################
+sum:
+        # checks for errors
+        goto access_two_elt linking r1
+        
+        # performs addition and pushes result in value stack
+        r3 := r3 + r5
+        push r3 on stack r4
+
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                         subtract                         #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: accesses to the topmost 2 elements using 
+#              access_two_elt. subtracts topmost element 
+#              from the second topmost element, pushes 
+#              the result back on valuestack, and goes to 
+#              waiting state    
+############################################################
+subtract:
+        # checks for errors
+        goto access_two_elt linking r1
+
+        # performs subtraction and pushes result in value stack
+        r3 := r5 - r3
+        push r3 on stack r4
+
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                           mult                           #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: accesses to the topmost 2 elements using 
+#              access_two_elt. multiplies the elements,  
+#              pushes the result back on valuestack, and 
+#              goes to waiting state  
+############################################################
+mult:
+        # checks for errors
+        goto access_two_elt linking r1
+
+        # performs multiplication and pushes result in value stack
+        r3 := r3 * r5
+        push r3 on stack r4
+
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                            div                           #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: accesses to the topmost 2 elements using 
+#              access_two_elt. divides the second topmost 
+#              element by the topmost element, pushes 
+#              the result back on valuestack, and goes to 
+#              waiting state   
+#         
+# notes:       checks to make sure zero is not the divisor
+############################################################
+div:
+        # checks for errors
+        goto access_two_elt linking r1
+        if (r3 == 0) goto handlezero using r1
+        
+        # checks if divisor or dividend is positive
+        if (r5 >s 0) goto pos1 using r1
+        if (r3 >s 0) goto neg2 using r1
+
+        # if both are negative: performs division after changing their signs
+        r3 := -r3
+        r5 := -r5
+
+        # calculates result and goes to divend to end operation
+        r3 := r5 / r3
+        goto divend
+
+        pos1:
+                # checks if divisor is negative
+                if (r3 <s 0) goto neg1 using r1
+                
+                # calculates result and goes to divend to end operation
+                r3 := r5 / r3 
+                goto divend
+        
+        neg1:
+                # changes divisor's sign if negative
+                r3 := -r3
+
+                # calculates result and goes to divend to end operation
+                r3 := r5 / r3
+                r3 := -r3
+                goto divend
+        neg2:
+                # changes dividend's sign if negative
+                r5 := -r5
+                
+                # calculates result and goes to divend to end operation
+                r3 := r5 / r3
+                r3 := -r3
+        divend:
+                # stores result in value stack
+                push r3 on stack r4
+        
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                        handlezero                        #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: called if divisor is zero from division,
+#              prints error message and puts the two popped 
+#              values back onto the stack for the stack to 
+#              effectively remain unchanged  
+############################################################
+handlezero:
+        # prints error message if attempting to divide by 0
+        output "Division by zero\n"
+        
+        # pushing both values back on the value stack to make sure
+        # the value stack remains unchanged
+        push r5 on stack r4
+        push r3 on stack r4
+        
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                            or                            #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: accesses to the topmost 2 elements using 
+#              access_two_elt. performs bitwise or on the 2 
+#              elements, pushes the result back on valuestack,
+#              and goes to waiting state    
+############################################################
+or:
+        # checks for errors
+        goto access_two_elt linking r1
+
+        # performs or and pushes result in value stack
+        r3 := r5 | r3
+        push r3 on stack r4
+        
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                            and                           #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: accesses to the topmost 2 elements using 
+#              access_two_elt. performs bitwise and on the
+#              2 elements, pushes the result back on
+#              valuestack, and goes to waiting state    
+############################################################
+and:
+        # checks for errors
+        goto access_two_elt linking r1
+        
+        # performs and and pushes result in value stack
+        r3 := r5 & r3
+        push r3 on stack r4
+
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                          sign                            #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: accesses to the topmost element using 
+#              access_one_elt. changes the sign for the
+#              element, pushes the result back on
+#              valuestack, and goes to waiting state    
+############################################################
+sign:
+        # checks for errors
+        goto access_one_elt linking r1
+
+        # flips sign and pushes it to value stack
+        r3 := -r3
+        push r3 on stack r4
+
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                            comp                          #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: accesses to the topmost element using 
+#              access_one_elt. calculates the bitwise 
+#              complement of the value, pushes the result 
+#              back on valuestack, and goes to waiting 
+#              state    
+############################################################
+comp:
+        # checks for errors
+        goto access_one_elt linking r1
+
+        # pushes bitwise complement of value to value stack
+        r3 := ~r3
+        push r3 on stack r4
+
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                          swap                            #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: accesses to the 2 topmost elements using 
+#              access_two_elt. pushes the topmost element 
+#              first, second topmost element second 
+#              (effectively swapping them), and goes to 
+#              waiting state    
+############################################################
+swap:
+        # checks for errors
+        goto access_two_elt linking r1
+
+        # pushes topmost element first and one below second to
+        # have the second become the topmost and vice versa
+        push r3 on stack r4
+        push r5 on stack r4
+        
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                            dup                           #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: accesses to the topmost element using 
+#              access_one_elt. pushes the value back on 
+#              valuestack twice to duplicate it, and goes 
+#              to waiting state
+############################################################
+dup:
+        # checks for errors
+        goto access_one_elt linking r1
+        
+        # pushes topmost element twice to duplicate it
+        push r3 on stack r4
+        push r3 on stack r4
+ 
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                        popping                           #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: checks if valuestack is empty and calls 
+#              stack_underflow_1 to raise an error message
+#              if it is , pops the topmost element of the 
+#              value stack, and goes to waiting state    
+############################################################
+popping:
+        # checks that valuestack is not empty
+        if (r4 == valuestack) goto stack_underflow_1 using r5
+        
+        # discards value from value stack
+        pop stack r4
+
+        # goes to waiting state
+        goto waiting
+
+############################################################
+#                         remove                           #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                     
+# description: checks if valuestack is empty, pops the 
+#              topmost element of the value stack, and 
+#              continues to recursively call itself as long
+#              as there are elements to be removed,
+#              effectively clearing the stack
+############################################################
+remove:
+        # checks that valuestack is not empty
+        if (r4 == valuestack) goto waiting using r5
+
+        # discards value from value stack
+        pop stack r4
+
+        # recursively calls remove
+        goto remove
+
+############################################################
+#                          digit                           #
+############################################################
+# arguments                                                
+#              r1: input as character
+# type of result:                                          
+#              none                                     
+# description: turns character to its integer representation
+#              and pushes integer value to value stack, and
+#              goes to enetering state to see if the input 
+#              is multi-digit 
+############################################################
+digit:
+        # stores digit in value stack in int form
+        r1 := r1 - '0'
+        push r1 on stack r4
+        goto entering
+
+############################################################
+#                       input_error                        #
+############################################################
+# arguments                                                
+#              r1: input as character
+# type of result:                                          
+#              none                                     
+# description: called when operation is unknown, writes an
+#              error message and goes to waiting state
+############################################################
+input_error:
+        # prints error message and goes to waiting state
+        output "Unknown character '"
+        output r1
+        output "'\n"
+        goto waiting
+
+############################################################
+#                       handleerror                        #
+############################################################
+# arguments                                                
+#              r3: first element popped for a two element
+#                  operation
+# type of result:                                          
+#              none                                     
+# description: for operations requiring two elements, if 
+#              there is no second element, pushes the first
+#              popped element back on the value stack to 
+#              make sure the value stack remains unchanged
+############################################################
+handleerror:
+        
+        push r3 on stack r4
+        
+############################################################
+#                     stack_underflow_2                    #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                 
+# description: prints an error message if there were not 
+#              as many elements as the operation needed (2)
+#              and goes back to waiting state
+############################################################
+stack_underflow_2:
+        output "Stack underflow---expected at least 2 elements\n"
+        goto waiting
+
+############################################################
+#                     stack_underflow_1                    #
+############################################################
+# arguments                                                
+#              none
+# type of result:                                          
+#              none                                 
+# description: prints an error message if there were not 
+#              as many elements as the operation needed (1)
+#              and goes back to waiting state
+############################################################
+stack_underflow_1:
+        output "Stack underflow---expected at least 1 element\n"
+        goto waiting
+
+############################################################
+#                      access_two_elt                      #
+############################################################
+# arguments                                                
+#              r1:  holds the return address
+# type of result:                                          
+#              r3: holds the topmost element of the 
+#                  valuestack
+#              r5: holds the second topmost element of the 
+#                  valuestack                                     
+# description: tries to access the topmost 2 elements of 
+#              valuestack, and calls stack_underflow_2 or 
+#              handleerror to raise an error message, and 
+#              leaves the stack unchanged if the stack only
+#              has 1 or no elements
+############################################################
+access_two_elt:
+        # checks if there is at least one element in value stack
+        if (r4 == valuestack) goto stack_underflow_2 using r5
+
+        # if there is at least one element, pops and stores it in r3
+        pop r3 off stack r4
+
+        # checks if there is one more element in value stack
+        if (r4 == valuestack) goto handleerror using r5
+
+        # if there is one more element, pops and stores it in r5
+        pop r5 off stack r4
+        
+        # returns to return address
+        goto r1
+
+############################################################
+#                      access_one_elt                      #
+############################################################
+# arguments                                                
+#              r1:  holds the return address
+# type of result:                                          
+#              r3: holds the topmost element of the 
+#                  valuestack                                  
+# description: tries to access the topmost element of 
+#              valuestack, and calls stack_underflow_1 to 
+#              raise an error message, and leaves the stack
+#              unchanged if the stack has no elements
+############################################################
+access_one_elt:
+        # checks if there is at least one element in value stack
+        if (r4 == valuestack) goto stack_underflow_1 using r5
+
+        # if there is at least one element, pops and stores it in r3
+        pop r3 off stack r4
+
+        # returns to return address
+        goto r1
+        
+.section data
+        # allocates space for value stack
+        .space 10000
+        valuestack:
+
+.section rodata
+        # allocates space for jumptable
+        jumptable:
+        .space 256

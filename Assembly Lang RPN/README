@@ -1,0 +1,49 @@
+Assembly Lang RPN by Cansu Birsen (cbirse01) and Ayse Idil Kolabas (akolab01)
+
+        Everything has been correctly implemented.
+
+        We generally stuck to the recommended calling convention:
+                - r0 holds zero
+                - r1 holds return address 
+                - r2 holds call stack
+                - r6, r7 holds temps
+                - r3 used as non-volatile register
+                - r5 used as volatile register
+                The only register we changed the purpose of:
+                - r4 holds value stack in calc40.ums
+
+        For the print module:
+                - Our print module compares the number pushed 
+                  on the call stack to:
+                        - 0 or the most negative number, and prints
+                          whichever if equal.
+                - If any other number: 
+                        - we recursively pop digits and push them 
+                          on a print stack
+                - Then we recursively print all the elements in the
+                  print stack by popping them. (each element of a 
+                  print stack is a digit of an element in the value stack)
+
+        RPN calculator’s value stack: 
+        We allocated a space of 10000 words in the memory for the 
+        value stack and assigned the space to register r4. We 
+        treated the space pointed by r4 the same way as we treated
+        the call stack held by r2.
+
+        Sections and Explanations
+        We stuck to the conventional sections in the spec:
+                init
+                        - setting up the program by creating pointers to 
+                        stacks, code to initialize jump tables, and code to 
+                        call main when setup is complete
+                text
+                        - executable functions that run the RPN calculator
+                        in calc40.ums and the definition of main in urt0.ums
+                data
+                        - allocates space for value, call and print stacks
+                rodata
+                        - allocates space for the jumptable
+
+        Hours you have spent analyzing the assignment: 2 hours
+        Hours you have spent writing assembly code: 6 hours
+        Hours you have spent debugging your calculator: 2 hours
